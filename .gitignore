@@ -1,15 +1,44 @@
+# Dependencies
 node_modules/
+
+# Build output (agar TypeScript / build system hai)
 dist/
+build/
+
+# Environment files (VERY IMPORTANT)
 .env
 .env.local
 .env.*.local
+.env.docker
 .env.docker.local
-*.log
-.DS_Store
+.env.example
 
-# Docker
+# Logs
+logs/
+*.log
+
+# Runtime data folders (tumhare project ke hisaab se)
+exports/
+uploads/
+scratch/
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker overrides
 docker-compose.override.yml
 
-# Coverage
+# Coverage reports
 coverage/
 .nyc_output/
+
+# Temporary / cache
+.cache/
+tmp/
+temp/
+
+# IDE files
+.vscode/
+.idea/
