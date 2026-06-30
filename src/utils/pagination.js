@@ -6,9 +6,10 @@ const MAX_PAGE_LIMIT = 100;
 
 const getPaginationParams = (query, defaultLimit = 20) => {
   const page  = Math.max(1, parseInt(query.page,  10) || 1);
+  const requestedLimit = query.limit || query.pageSize;
   const limit = Math.min(
     MAX_PAGE_LIMIT,
-    Math.max(1, parseInt(query.limit, 10) || defaultLimit),
+    Math.max(1, parseInt(requestedLimit, 10) || defaultLimit),
   );
   const skip = (page - 1) * limit;
   return { page, limit, skip };

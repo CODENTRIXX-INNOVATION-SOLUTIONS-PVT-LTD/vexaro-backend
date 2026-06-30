@@ -40,12 +40,19 @@ const MERCHANT_ID = '507f1f77bcf86cd799439011';
 const ADDRESS_ID  = '507f1f77bcf86cd799439012';
 
 /** Build a minimal mock Express request */
-const mockReq = (overrides = {}) => ({
-  user:      { userId: MERCHANT_ID, role: 'MERCHANT' },
-  validated: {},
-  requestId: 'test-req-id',
-  ...overrides,
-});
+const mockReq = (overrides = {}) => {
+  const req = {
+    user:      { userId: MERCHANT_ID, role: 'MERCHANT' },
+    validated: {},
+    params:    {},
+    requestId: 'test-req-id',
+    ...overrides,
+  };
+  if (overrides.validated && overrides.validated.params) {
+    req.params = { ...req.params, ...overrides.validated.params };
+  }
+  return req;
+};
 
 /** Build a mock Express response that captures the last json() call */
 const mockRes = () => {
