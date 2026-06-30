@@ -22,6 +22,8 @@ exports/
 uploads/
 scratch/
 logs/
+scripts/
+tests/
 
 # OS files
 .DS_Store
