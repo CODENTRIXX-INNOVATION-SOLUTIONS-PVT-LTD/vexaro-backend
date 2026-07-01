@@ -37,7 +37,7 @@ const shipmentReportService = async (query, caller) => {
   return remember(cacheKey, TTL.REPORT, async () => {
     const filter = buildScope(caller, query);
 
-    const [totals, byStatus, byService, dailyVolume] = await Promise.all([
+    const [totals, byStatus, byService, dailyVolume, dailyStatusTrends] = await Promise.all([
       // Overall totals
       reportRepository.aggregateShipments([
         { $match: filter },
@@ -77,6 +77,19 @@ const shipmentReportService = async (query, caller) => {
         }},
         { $sort: { _id: 1 } },
       ]),
+
+      // Daily status trends (last 7 days) - for line chart
+      reportRepository.aggregateShipments([
+        { $match: { ...filter, createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } },
+        { $group: {
+          _id: {
+            date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            status: '$status'
+          },
+          count: { $sum: 1 }
+        }},
+        { $sort: { '_id.date': 1 } },
+      ]),
     ]);
 
     const statusMap = byStatus.reduce((a, s) => { a[s._id] = s.count; return a; }, {});
@@ -92,6 +105,7 @@ const shipmentReportService = async (query, caller) => {
       byStatus: statusMap,
       byService: byService.reduce((a, s) => { a[s._id] = s.count; return a; }, {}),
       dailyVolume,
+      dailyStatusTrends,
     };
   }); // end remember
 };

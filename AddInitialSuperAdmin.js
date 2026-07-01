@@ -1,10 +1,14 @@
+<<<<<<< Updated upstream
 require('dotenv').config();
+=======
+>>>>>>> Stashed changes
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const { User } = require('./src/modules/users/user.model');
 const { UserRole } = require('./src/constants');
 
 async function seed() {
+<<<<<<< Updated upstream
   const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/vexaro';
   console.log(`Connecting to database at ${mongoUri}...`);
   await mongoose.connect(mongoUri);
@@ -22,6 +26,23 @@ async function seed() {
 
   await User.create({
     email: adminEmail,
+=======
+  await mongoose.connect('mongodb://localhost:27017/vexaro');
+
+  const existing = await User.findOne({
+    email: 'vishwasgour2002@gmail.com',
+  });
+
+  if (existing) {
+    console.log('User already exists');
+    process.exit(0);
+  }
+
+  const passwordHash = await bcrypt.hash('vishwasgour2002@gmail.com', 12);
+
+  await User.create({
+    email: 'vishwasgour2002@gmail.com',
+>>>>>>> Stashed changes
     passwordHash,
     role: UserRole.SUPER_ADMIN,
     isActive: true,
@@ -33,6 +54,7 @@ async function seed() {
     address: 'Bhopal',
   });
 
+<<<<<<< Updated upstream
   console.log('Super Admin user created successfully.');
   await mongoose.connection.close();
 }
@@ -43,3 +65,10 @@ seed().catch(async (err) => {
     await mongoose.connection.close();
   }
 });
+=======
+  console.log('Super Admin created');
+  process.exit(0);
+}
+
+seed().catch(console.error);
+>>>>>>> Stashed changes
