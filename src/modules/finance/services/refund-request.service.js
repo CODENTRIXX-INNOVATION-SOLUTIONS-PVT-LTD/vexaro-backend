@@ -135,8 +135,8 @@ const listRefundRequestsService = async (query, caller) => {
     scopeFilter.status = query.status;
   }
 
-  const page  = Math.max(1, parseInt(query.page,  10) || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(query.limit, 10) || 20));
+  const { paginate } = require('../../../utils/pagination');
+  const { page, limit } = paginate(query);
 
   return refundRequestRepository.findAll(scopeFilter, { page, limit });
 };

@@ -61,8 +61,7 @@ const findTransactionById = (id) => Transaction.findById(id);
 const findTransactionsPaginated = async (filter, { skip, limit, sort = { createdAt: -1 } } = {}) => {
   return Promise.all([
     Transaction.find(filter)
-      .populate('shipmentId', 'awb status')
-      .populate('performedBy', 'firstName lastName email role')
+      .select('type amount balanceAfter note createdAt')
       .sort(sort)
       .skip(skip)
       .limit(limit)

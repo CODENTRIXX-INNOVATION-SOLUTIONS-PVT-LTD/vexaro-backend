@@ -8,8 +8,7 @@ const { DisputeStatus, ShipmentStatus } = require('../constants');
 const logger = require('./logger');
 const cache = require('./cache');
 
-// Block bookings flag key in cache to share across multiple server processes if needed
-const TOKEN_BLOCKED_KEY = 'vx:velocity:token_blocked';
+
 
 /**
  * Polls tracking details from Velocity for all active (non-terminal) shipments.
@@ -84,34 +83,6 @@ const expireDisputesWorker = async () => {
 };
 
 /**
- * Refreshes Velocity Auth Token with exponential backoff on failure.
- * Blocks/unblocks bookings dynamically depending on auth token availability.
- */
-const refreshVelocityTokenWithBackoff = async (attempt = 1, delay = 2000) => {
-  try {
-    // Clear cache to force token fetch
-    await cache.del(cache.KEYS.velocityToken());
-    await velocityClient.getAuthToken();
-    
-    // Success: unblock bookings
-    await cache.set(TOKEN_BLOCKED_KEY, 'false');
-    velocityClient.tokenBlocked = false;
-    logger.info('cron_velocity_token_refresh_success');
-  } catch (err) {
-    logger.error('cron_velocity_token_refresh_failed', { attempt, message: err.message });
-    if (attempt < 3) {
-      logger.info(`Retrying token refresh in ${delay}ms...`);
-      setTimeout(() => refreshVelocityTokenWithBackoff(attempt + 1, delay * 2), delay);
-    } else {
-      // Failed all 3 attempts: block bookings
-      await cache.set(TOKEN_BLOCKED_KEY, 'true');
-      velocityClient.tokenBlocked = true;
-      logger.error('cron_velocity_token_refresh_failed_all_attempts_blocking_bookings');
-    }
-  }
-};
-
-/**
  * Initializes and schedules all cron jobs.
  */
 const initScheduler = () => {
@@ -127,16 +98,6 @@ const initScheduler = () => {
     await expireDisputesWorker();
   });
 
-  // 3. Every 23 hours: refresh Velocity token (Rule TECH5)
-  cron.schedule('0 */23 * * *', async () => {
-    await refreshVelocityTokenWithBackoff();
-  });
-
-  // Initial token load on startup
-  refreshVelocityTokenWithBackoff().catch((err) => {
-    logger.error('scheduler_initial_token_refresh_error', { message: err.message });
-  });
-
   logger.info('scheduler_initialized_successfully');
 };
 
@@ -144,6 +105,4 @@ module.exports = {
   initScheduler,
   pollActiveShipmentsTracking,
   expireDisputesWorker,
-  refreshVelocityTokenWithBackoff,
-  TOKEN_BLOCKED_KEY,
 };

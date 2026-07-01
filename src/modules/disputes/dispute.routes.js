@@ -11,7 +11,7 @@ router.use(authMiddleware);
 // Weight Disputes (Feature 9)
 router.post('/weight-dispute', requireRole(UserRole.SUPER_ADMIN), validateRequest({ body: schemas.raiseWeightDisputeSchema }), c.raiseWeightDispute);
 router.get('/weight-dispute', validateRequest({ query: schemas.listWeightDisputesQuerySchema }), c.listWeightDisputes);
-router.patch('/weight-dispute/:id/resolve', requireRole(UserRole.SUPER_ADMIN, UserRole.DISTRIBUTOR), validateRequest({ params: schemas.disputeIdParamsSchema, body: schemas.resolveWeightDisputeSchema }), c.resolveWeightDispute);
+router.patch('/weight-dispute/:id/resolve', requireRole(UserRole.SUPER_ADMIN), validateRequest({ params: schemas.disputeIdParamsSchema, body: schemas.resolveWeightDisputeSchema }), c.resolveWeightDispute);
 router.patch('/weight-dispute/:id/proof', requireRole(UserRole.MERCHANT), validateRequest({ params: schemas.disputeIdParamsSchema, body: schemas.submitDisputeProofSchema }), c.submitDisputeProof);
 
 // Standard Disputes

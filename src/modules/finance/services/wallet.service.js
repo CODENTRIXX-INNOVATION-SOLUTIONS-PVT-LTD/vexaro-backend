@@ -1,7 +1,7 @@
 'use strict';
 
 const { UserRole, TransactionType } = require('../../../constants');
-const { getPaginationParams } = require('../../../utils/pagination');
+const { paginate } = require('../../../utils/pagination');
 const { runInTransaction } = require('../../../utils/transaction');
 const financeRepository = require('../finance.repository');
 const userRepository = require('../../users/user.repository');
@@ -32,7 +32,7 @@ const listWalletsService = async (query, caller) => {
     throw Object.assign(new Error('Access denied'), { statusCode: 403 });
   }
 
-  const { limit, skip } = getPaginationParams(query, 20);
+  const { limit, skip } = paginate(query);
   const filter = { userId: { $in: userIds } };
 
   const [wallets, total] = await financeRepository.findWalletsPaginated(filter, { skip, limit });

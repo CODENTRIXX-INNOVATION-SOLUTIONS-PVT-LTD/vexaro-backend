@@ -1,14 +1,14 @@
 'use strict';
 
 const { UserRole, DisputeStatus } = require('../../../constants');
-const { getPaginationParams } = require('../../../utils/pagination');
+const { paginate } = require('../../../utils/pagination');
 const disputeRepository = require('../dispute.repository');
 const shipmentRepository = require('../../shipments/shipment.repository');
 const { buildFilter } = require('../shared/dispute.helpers');
 
 const listDisputesService = async (query, caller) => {
   const filter = await buildFilter(caller, query);
-  const { limit, skip } = getPaginationParams(query, 20);
+  const { limit, skip } = paginate(query);
 
   const [disputes, total] = await disputeRepository.findPaginated(filter, { skip, limit });
   return { items: disputes, total };

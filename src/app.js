@@ -11,9 +11,8 @@ const { awbParamsSchema } = require('./validation/schemas/shipments');
 const {
   generalLimiter,
   authLimiter,
-  shipmentLimiter,
+  bookingLimiter,
   webhookLimiter,
-  trackingLimiter,
 } = require('./middleware/rate-limit.middleware');
 
 const authRoutes = require('./modules/auth/auth.routes');
@@ -30,6 +29,8 @@ const { errorMiddleware } = require('./middleware/error.middleware');
 const webhookRoutes = require('./modules/webhooks');
 
 const app = express();
+
+app.use(compression());
 
 app.use(helmet({
   contentSecurityPolicy: {
@@ -72,16 +73,9 @@ app.use(cors({
   maxAge: 86400, // preflight cache (24 hours)
 }));
 
-app.use(compression({
-  threshold: 1024,
-  filter: (req, res) => {
-    if (req.path.includes('/export/')) return false;
-    return compression.filter(req, res);
-  },
-}));
-
 app.use(requestMiddleware);
 app.use('/api/webhooks', webhookLimiter, webhookRoutes);
+app.use('/api/webhook', webhookLimiter, webhookRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -89,40 +83,26 @@ app.use(sanitizeMiddleware({ maxDepth: 20, maxKeys: 1000 }));
 app.use('/api', generalLimiter);
 app.use('/api/v1/auth/login',           authLimiter);
 app.use('/api/v1/auth/forgot-password', authLimiter);
-app.use('/api/v1/users/invite',         authLimiter);
-app.use('/api/v1/shipments',            shipmentLimiter);
+app.post('/api/v1/shipments',           bookingLimiter);
 
-app.get('/health', async (_req, res) => {
+const healthHandler = async (_req, res) => {
   const mongoose = require('mongoose');
-  const { getClient } = require('./utils/cache');
-
   const mongoOk = mongoose.connection.readyState === 1;
 
-  let redisOk = false;
-  try {
-    const redisClient = getClient();
-    if (redisClient) {
-      await redisClient.ping();
-      redisOk = true;
-    } else {
-      redisOk = true; // Redis disabled intentionally — not a failure
-    }
-  } catch {
-    redisOk = false;
-  }
-
-  const healthy = mongoOk; // Redis is advisory only
+  const healthy = mongoOk;
   return res.status(healthy ? 200 : 503).json({
     success:   healthy,
     message:   healthy ? 'Vexaro API is healthy' : 'Service degraded — database unavailable',
     checks: {
       mongodb: mongoOk ? 'ok' : 'error',
-      redis:   redisOk ? 'ok' : 'error',
     },
     env:       env.NODE_ENV,
     timestamp: new Date().toISOString(),
   });
-});
+};
+
+app.get('/health', healthHandler);
+app.get('/api/v1/health', healthHandler);
 
 const { setupSwagger } = require('./config/swagger');
 setupSwagger(app);

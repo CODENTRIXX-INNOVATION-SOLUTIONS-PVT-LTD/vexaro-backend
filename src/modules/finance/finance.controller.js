@@ -1,6 +1,6 @@
 const { success, created, paginated } = require('../../utils');
 const { wrapController } = require('../../utils/errors');
-const { getPaginationParams, buildPaginationMeta } = require('../../utils/pagination');
+const { paginate } = require('../../utils/pagination');
 const {
   getMyWalletService, listWalletsService, topupWalletService, refundWalletService,
   listTransactionsService, listCODService, remitCODService,
@@ -15,10 +15,18 @@ exports.getMyWallet     = wrap(async (req, res) => success(res, 'Wallet retrieve
 
 exports.listWallets     = wrap(async (req, res) => {
   const query = req.validated.query;
-  const { page, limit } = getPaginationParams(query, 20);
+  const { page, limit } = paginate(query);
   const { items, total } = await listWalletsService(query, req.user);
-  const meta = buildPaginationMeta(total, page, limit);
-  paginated(res, 'Wallets retrieved', { wallets: items }, meta);
+  return res.status(200).json({
+    success: true,
+    data: items,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit)
+    }
+  });
 });
 
 exports.topupWallet = wrap(async (req, res) => created(res, 'Wallet topped up successfully', await topupWalletService(req.validated.body, req.user)));
@@ -26,19 +34,35 @@ exports.topupWallet = wrap(async (req, res) => created(res, 'Wallet topped up su
 // Transactions
 exports.listTransactions = wrap(async (req, res) => {
   const query = req.validated.query;
-  const { page, limit } = getPaginationParams(query, 20);
+  const { page, limit } = paginate(query);
   const { items, total } = await listTransactionsService(query, req.user);
-  const meta = buildPaginationMeta(total, page, limit);
-  paginated(res, 'Transactions retrieved', { transactions: items }, meta);
+  return res.status(200).json({
+    success: true,
+    data: items,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit)
+    }
+  });
 });
 
 // COD
 exports.listCOD  = wrap(async (req, res) => {
   const query = req.validated.query;
-  const { page, limit } = getPaginationParams(query, 20);
+  const { page, limit } = paginate(query);
   const { items, total } = await listCODService(query, req.user);
-  const meta = buildPaginationMeta(total, page, limit);
-  paginated(res, 'COD records retrieved', { cods: items }, meta);
+  return res.status(200).json({
+    success: true,
+    data: items,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit)
+    }
+  });
 });
 
 exports.remitCOD = wrap(async (req, res) => success(res, 'COD remitted successfully', await remitCODService(req.params.id, req.validated.body, req.user)));
@@ -46,10 +70,18 @@ exports.remitCOD = wrap(async (req, res) => success(res, 'COD remitted successfu
 // Settlements
 exports.listSettlements    = wrap(async (req, res) => {
   const query = req.validated.query;
-  const { page, limit } = getPaginationParams(query, 20);
+  const { page, limit } = paginate(query);
   const { items, total } = await listSettlementsService(query, req.user);
-  const meta = buildPaginationMeta(total, page, limit);
-  paginated(res, 'Settlements retrieved', { settlements: items }, meta);
+  return res.status(200).json({
+    success: true,
+    data: items,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit)
+    }
+  });
 });
 
 exports.createSettlement = wrap(async (req, res) => created(res, 'Settlement created', await createSettlementService(req.validated.body, req.user)));
@@ -70,10 +102,18 @@ exports.submitRefundRequest = wrap(async (req, res) =>
 
 exports.listRefundRequests = wrap(async (req, res) => {
   const query = req.validated.query;
-  const { page, limit } = getPaginationParams(query, 20);
+  const { page, limit } = paginate(query);
   const { items, total } = await listRefundRequestsService(query, req.user);
-  const meta = buildPaginationMeta(total, page, limit);
-  paginated(res, 'Refund requests retrieved', { refundRequests: items }, meta);
+  return res.status(200).json({
+    success: true,
+    data: items,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit)
+    }
+  });
 });
 
 exports.processRefundRequest = wrap(async (req, res) =>

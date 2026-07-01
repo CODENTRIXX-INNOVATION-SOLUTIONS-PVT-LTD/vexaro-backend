@@ -27,10 +27,12 @@ const findByEmail = (email) =>
 const findPaginated = async (filter, { skip, limit, sort = { createdAt: -1 } } = {}) => {
   return Promise.all([
     User.find(filter)
+      .select('firstName lastName email phone companyName isActive role createdAt')
       .populate('invitedBy', 'firstName lastName email role')
       .sort(sort)
       .skip(skip)
-      .limit(limit),
+      .limit(limit)
+      .lean(),
     User.countDocuments(filter),
   ]);
 };

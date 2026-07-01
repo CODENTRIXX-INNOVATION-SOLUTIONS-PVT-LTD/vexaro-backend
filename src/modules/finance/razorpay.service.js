@@ -102,6 +102,16 @@ const createRazorpayOrderService = async (dto, caller) => {
 const verifyPaymentService = async (dto, caller) => {
   const { paymentId, orderId, razorpayPaymentId, signature } = dto;
 
+  const existing = await Payment.findOne({ 
+    razorpayOrderId: orderId, 
+    status: PaymentStatus.SUCCESS 
+  });
+  if (existing) {
+    const wallet = await Wallet.findById(existing.walletId);
+    const transaction = await Transaction.findById(existing.transactionId);
+    return { success: true, wallet, balance: wallet?.balance, transaction, alreadyProcessed: true };
+  }
+
   // Load the Payment document created during create-order
   const payment = await Payment.findOne({ _id: paymentId, userId: caller.userId });
   if (!payment) throw Object.assign(new Error('Payment record not found'), { statusCode: 404 });

@@ -11,7 +11,7 @@ const {
 } = require('./user.service');
 const { success, created, paginated } = require('../../utils');
 const { wrapController } = require('../../utils/errors');
-const { getPaginationParams, buildPaginationMeta } = require('../../utils/pagination');
+const { paginate } = require('../../utils/pagination');
 
 const withErrorHandling = wrapController;
 
@@ -25,10 +25,18 @@ const inviteUser = withErrorHandling(async (req, res) => {
 // ─── GET /api/users ────────────────────────────────────────────────────────────
 const listUsers = withErrorHandling(async (req, res) => {
   const query = req.validated.query;
-  const { page, limit } = getPaginationParams(query, 10);
+  const { page, limit } = paginate(query);
   const { items, total } = await listUsersService(query, req.user);
-  const meta = buildPaginationMeta(total, page, limit);
-  paginated(res, 'Users retrieved successfully', { users: items }, meta);
+  return res.status(200).json({
+    success: true,
+    data: items,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit)
+    }
+  });
 });
 
 // ─── GET /api/users/:id ────────────────────────────────────────────────────────

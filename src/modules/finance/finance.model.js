@@ -99,17 +99,16 @@ const transactionSchema = new mongoose.Schema(
   },
 );
 
-const preventMutation = function (next) {
+const preventMutation = function () {
   const err = new Error('Transactions are immutable and cannot be updated or deleted.');
   err.statusCode = 400;
-  next(err);
+  throw err;
 };
 
-transactionSchema.pre('save', function (next) {
+transactionSchema.pre('save', function () {
   if (!this.isNew) {
-    return preventMutation(next);
+    preventMutation();
   }
-  next();
 });
 
 transactionSchema.pre('updateOne', preventMutation);

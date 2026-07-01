@@ -1,7 +1,7 @@
 'use strict';
 
 const { UserRole, CODStatus, TransactionType } = require('../../../constants');
-const { getPaginationParams } = require('../../../utils/pagination');
+const { paginate } = require('../../../utils/pagination');
 const { runInTransaction } = require('../../../utils/transaction');
 const financeRepository = require('../finance.repository');
 const shipmentRepository = require('../../shipments/shipment.repository');
@@ -17,7 +17,7 @@ const listCODService = async (query, caller) => {
   if (query.status) filter.status = query.status;
   if (query.merchantId && caller.role === UserRole.SUPER_ADMIN) filter.merchantId = query.merchantId;
 
-  const { limit, skip } = getPaginationParams(query, 20);
+  const { limit, skip } = paginate(query);
 
   const [cods, total] = await financeRepository.findCodsPaginated(filter, { skip, limit });
   return { items: cods, total };

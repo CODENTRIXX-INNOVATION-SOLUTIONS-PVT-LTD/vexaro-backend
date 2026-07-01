@@ -32,7 +32,7 @@ function validate(schema, source = 'body', options = {}) {
 
       req.validated = req.validated || {};
       req.validated[source] = result.data;
-      if (source === 'body' || source === 'params') req[source] = result.data;
+      if (source === 'body' || source === 'params' || source === 'query') req[source] = result.data;
       return next();
     } catch (error) {
       return next(error);
@@ -71,6 +71,7 @@ function validateRequest(schemas, options = {}) {
       req.validated = { ...(req.validated || {}), ...validated };
       if (Object.prototype.hasOwnProperty.call(validated, 'body')) req.body = validated.body;
       if (Object.prototype.hasOwnProperty.call(validated, 'params')) req.params = validated.params;
+      if (Object.prototype.hasOwnProperty.call(validated, 'query')) req.query = validated.query;
       return next();
     } catch (error) {
       return next(error);

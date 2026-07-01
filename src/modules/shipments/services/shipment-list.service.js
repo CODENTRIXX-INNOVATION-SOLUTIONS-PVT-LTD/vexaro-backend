@@ -2,14 +2,15 @@
 
 const { Shipment } = require('../shipment.model');
 const { buildShipmentFilter } = require('../shared/shipment.helpers');
-const { getPaginationParams } = require('../../../utils/pagination');
+const { paginate } = require('../../../utils/pagination');
 
 const listShipmentsService = async (query, caller) => {
   const filter = buildShipmentFilter(caller, query);
-  const { limit, skip } = getPaginationParams(query, 20);
+  const { limit, skip } = paginate(query);
 
   const [shipments, total] = await Promise.all([
     Shipment.find(filter)
+      .select('merchantOrderRef awb status carrier destination.name destination.city merchantCost isCOD createdAt')
       .populate('merchantId',    'firstName lastName email companyName')
       .populate('distributorId', 'firstName lastName email companyName')
       .populate('warehouseId',   'firstName lastName email companyName')

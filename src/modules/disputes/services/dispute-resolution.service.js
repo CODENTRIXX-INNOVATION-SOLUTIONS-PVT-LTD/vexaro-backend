@@ -58,8 +58,11 @@ const resolveWeightDisputeService = async (id, dto, caller) => {
     if (isApproved) {
       const ref = `REVS-${shipment.awb}`;
 
+      const merchantId = (shipment.merchantId._id || shipment.merchantId).toString();
+      const distributorId = shipment.distributorId ? (shipment.distributorId._id || shipment.distributorId).toString() : null;
+
       // Refund merchant
-      await applyTransaction(session, shipment.merchantId.toString(), TransactionType.REFUND, dispute.extraCharge, {
+      await applyTransaction(session, merchantId, TransactionType.REFUND, dispute.extraCharge, {
         reference: `${ref}-MERCH`,
         shipmentId: shipment._id,
         performedBy: caller.userId,
@@ -67,8 +70,8 @@ const resolveWeightDisputeService = async (id, dto, caller) => {
       });
 
       // Refund distributor
-      if (shipment.distributorId) {
-        await applyTransaction(session, shipment.distributorId.toString(), TransactionType.REFUND, dispute.extraCharge, {
+      if (distributorId) {
+        await applyTransaction(session, distributorId, TransactionType.REFUND, dispute.extraCharge, {
           reference: `${ref}-DIST`,
           shipmentId: shipment._id,
           performedBy: caller.userId,
@@ -85,7 +88,7 @@ const resolveWeightDisputeService = async (id, dto, caller) => {
 
     try {
       const resultLabel = isApproved ? 'APPROVED (charges reversed)' : 'REJECTED (charges upheld)';
-      await createNotification(shipment.merchantId, {
+      await createNotification(shipment.merchantId._id || shipment.merchantId, {
         title: `Weight Dispute ${isApproved ? 'Approved' : 'Rejected'}`,
         message: `Your weight dispute for AWB ${shipment.awb} has been ${resultLabel}.`,
         type: 'DISPUTE',

@@ -1,7 +1,7 @@
 'use strict';
 
 const { UserRole, TransactionType } = require('../../../constants');
-const { getPaginationParams } = require('../../../utils/pagination');
+const { paginate } = require('../../../utils/pagination');
 const { runInTransaction } = require('../../../utils/transaction');
 const financeRepository = require('../finance.repository');
 const userRepository = require('../../users/user.repository');
@@ -21,7 +21,7 @@ const listSettlementsService = async (query, caller) => {
 
   if (query.status) filter.status = query.status;
 
-  const { limit, skip } = getPaginationParams(query, 20);
+  const { limit, skip } = paginate(query);
 
   const [settlements, total] = await financeRepository.findSettlementsPaginated(filter, { skip, limit });
   return { items: settlements, total };

@@ -16,7 +16,7 @@ const {
 const { BulkJob } = require('./bulk-job.model');
 const { success, created, paginated } = require('../../utils');
 const { wrapController } = require('../../utils/errors');
-const { getPaginationParams, buildPaginationMeta } = require('../../utils/pagination');
+const { paginate } = require('../../utils/pagination');
 const { parse } = require('csv-parse/sync');
 
 // ─── Multer: memory storage for CSV upload ────────────────────────────────────
@@ -26,10 +26,18 @@ const withErrorHandling = wrapController;
 // ─── GET /api/shipments ────────────────────────────────────────────────────────
 const listShipments = withErrorHandling(async (req, res) => {
   const query = req.validated.query;
-  const { page, limit } = getPaginationParams(query, 20);
+  const { page, limit } = paginate(query);
   const { items, total } = await listShipmentsService(query, req.user);
-  const meta = buildPaginationMeta(total, page, limit);
-  paginated(res, 'Shipments retrieved successfully', { shipments: items }, meta);
+  return res.status(200).json({
+    success: true,
+    data: items,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit)
+    }
+  });
 });
 
 // ─── POST /api/shipments ───────────────────────────────────────────────────────

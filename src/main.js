@@ -49,9 +49,6 @@ const bootstrap = async () => {
     });
   }
 
-  const { connect: connectRedis } = require('./utils/cache');
-  await connectRedis();
-
   const { initScheduler } = require('./utils/scheduler');
   initScheduler();
 
@@ -64,8 +61,7 @@ const bootstrap = async () => {
     });
 
     console.log(`\n🚀 Vexaro API  →  http://localhost:${env.PORT}`);
-    console.log(`   Env: ${env.NODE_ENV} | Sentry: ${env.SENTRY_DSN ? 'enabled' : 'disabled'}`);
-    console.log(`   Redis: ${env.REDIS_ENABLED ? env.REDIS_URL : 'disabled'}\n`);
+    console.log(`   Env: ${env.NODE_ENV} | Sentry: ${env.SENTRY_DSN ? 'enabled' : 'disabled'}\n`);
     console.log('📋 AUTH          POST /api/auth/login');
     console.log('                 GET  /api/auth/verify-invite');
     console.log('                 POST /api/auth/set-password');

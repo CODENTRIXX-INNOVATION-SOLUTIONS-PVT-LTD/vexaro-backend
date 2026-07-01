@@ -4,10 +4,10 @@ const { env } = require('./env');
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(env.MONGODB_URI, {
-      maxPoolSize: env.MONGODB_POOL_SIZE,
-      minPoolSize: Math.max(2, Math.floor(env.MONGODB_POOL_SIZE / 5)),
-      serverSelectionTimeoutMS: 5_000,
-      socketTimeoutMS:         45_000,
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
       heartbeatFrequencyMS:    10_000,
       connectTimeoutMS:        10_000,
     });
@@ -29,14 +29,6 @@ const gracefulShutdown = async (signal) => {
     logger.info('mongodb_connection_closed');
   } catch (err) {
     logger.error('mongodb_close_error', { error: err.message });
-  }
-
-  try {
-    const { disconnect } = require('../utils/cache');
-    await disconnect();
-    logger.info('redis_connection_closed');
-  } catch (err) {
-    logger.error('redis_close_error', { error: err.message });
   }
 
   logger.info('graceful_shutdown_complete', { signal });

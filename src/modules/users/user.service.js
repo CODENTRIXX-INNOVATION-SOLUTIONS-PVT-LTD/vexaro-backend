@@ -6,7 +6,7 @@ const { UserRole }        = require('../../constants');
 const { generateToken, hashToken, tokenExpiry } = require('../../utils');
 const { sendInviteEmail } = require('../../utils/email');
 const { env }             = require('../../config/env');
-const { getPaginationParams } = require('../../utils/pagination');
+const { paginate } = require('../../utils/pagination');
 const { runInTransaction } = require('../../utils/transaction');
 const { velocityClient }  = require('../../utils/velocity');
 const { del, KEYS }       = require('../../utils/cache');
@@ -214,15 +214,29 @@ const inviteUserService = async (dto, caller) => {
   return userObj.getPublicProfile();
 };
 
-// ─── Task 2: GET /api/users ────────────────────────────────────────────────────
 const listUsersService = async (query, caller) => {
   const filter = buildListFilter(caller, query);
-  const { page, limit, skip } = getPaginationParams(query, 10);
+  const { limit, skip } = paginate(query);
 
   const [users, total] = await userRepository.findPaginated(filter, { skip, limit });
 
   return {
-    items: users.map((u) => u.getPublicProfile()),
+    items: users.map((u) => {
+      if (typeof u.getPublicProfile === 'function') {
+        return u.getPublicProfile();
+      }
+      return {
+        id: u._id,
+        email: u.email,
+        role: u.role,
+        isActive: u.isActive,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        phone: u.phone,
+        companyName: u.companyName,
+        createdAt: u.createdAt,
+      };
+    }),
     total,
   };
 };

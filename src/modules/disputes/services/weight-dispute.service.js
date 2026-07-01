@@ -1,7 +1,7 @@
 'use strict';
 
 const { UserRole, TransactionType } = require('../../../constants');
-const { getPaginationParams } = require('../../../utils/pagination');
+const { paginate } = require('../../../utils/pagination');
 const { runInTransaction } = require('../../../utils/transaction');
 const disputeRepository = require('../dispute.repository');
 const shipmentRepository = require('../../shipments/shipment.repository');
@@ -27,18 +27,21 @@ const raiseWeightDisputeService = async (dto, caller) => {
     const { applyTransaction } = require('../../finance/finance.service');
     const { logAuditEvent } = require('../../audit/audit.service');
 
+    const merchantId = (shipment.merchantId._id || shipment.merchantId).toString();
+    const distributorId = shipment.distributorId ? (shipment.distributorId._id || shipment.distributorId).toString() : null;
+
     // Deduct extraCharge from merchant using applyTransaction
-    await applyTransaction(session, shipment.merchantId.toString(), TransactionType.DISPUTE_CHARGE, extraCharge, {
-      reference: ref,
+    await applyTransaction(session, merchantId, TransactionType.DISPUTE_CHARGE, extraCharge, {
+      reference: `${ref}-MERCH`,
       shipmentId: shipment._id,
       performedBy: caller.userId,
       note: `Weight dispute charge for shipment ${shipment.awb}`,
     });
 
     // Deduct extraCharge from distributor using applyTransaction
-    if (shipment.distributorId) {
-      await applyTransaction(session, shipment.distributorId.toString(), TransactionType.DISPUTE_CHARGE, extraCharge, {
-        reference: ref,
+    if (distributorId) {
+      await applyTransaction(session, distributorId, TransactionType.DISPUTE_CHARGE, extraCharge, {
+        reference: `${ref}-DIST`,
         shipmentId: shipment._id,
         performedBy: caller.userId,
         note: `Weight dispute charge for shipment ${shipment.awb}`,
@@ -63,7 +66,7 @@ const raiseWeightDisputeService = async (dto, caller) => {
     }, session);
 
     try {
-      await createNotification(shipment.merchantId, {
+      await createNotification(shipment.merchantId._id || shipment.merchantId, {
         title: 'Weight Dispute Raised',
         message: `Weight dispute raised on AWB ${shipment.awb}. Declared: ${declaredWeight}kg | Actual: ${actualWeight}kg. ₹${extraCharge.toFixed(2)} debited. Dispute this within 3 days.`,
         type: 'DISPUTE',
@@ -79,7 +82,7 @@ const raiseWeightDisputeService = async (dto, caller) => {
 const listWeightDisputesService = async (query, caller) => {
   await disputeRepository.closeExpiredWeightDisputes();
   const filter = await buildWeightDisputeFilter(caller, query);
-  const { limit, skip } = getPaginationParams(query, 20);
+  const { limit, skip } = paginate(query);
 
   const [disputes, total] = await disputeRepository.findWeightPaginated(filter, { skip, limit });
   return { items: disputes, total };
@@ -95,7 +98,7 @@ const submitDisputeProofService = async (id, dto, caller) => {
   }
 
   const shipment = await shipmentRepository.findById(dispute.shipmentId);
-  if (!shipment || shipment.merchantId.toString() !== caller.userId) {
+  if (!shipment || (shipment.merchantId._id || shipment.merchantId).toString() !== caller.userId) {
     throw Object.assign(new Error('Access denied. You can only submit proof for your own shipments.'), { statusCode: 403 });
   }
 

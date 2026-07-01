@@ -22,12 +22,8 @@ const isProduction = process.env.NODE_ENV === 'production';
 if (isProduction) {
   // Reject localhost/127.0.0.1 in production env
   const dbUri = process.env.MONGODB_URI || '';
-  const redisUrl = process.env.REDIS_URL || '';
   if (dbUri.includes('localhost') || dbUri.includes('127.0.0.1')) {
     throw new Error('Production Database URI cannot connect to localhost or 127.0.0.1');
-  }
-  if (redisUrl.includes('localhost') || redisUrl.includes('127.0.0.1')) {
-    throw new Error('Production Redis URL cannot connect to localhost or 127.0.0.1');
   }
 
   // Reject missing secrets in production
@@ -86,10 +82,6 @@ const env = {
   // Get your DSN from https://sentry.io → Settings → Projects → Client Keys
   // Leave blank or omit in development to disable Sentry.
   SENTRY_DSN: process.env.SENTRY_DSN || '',
-
-  // ─── Redis ──────────────────────────────────────────────────────────────────
-  REDIS_URL:     process.env.REDIS_URL     || 'redis://127.0.0.1:6379',
-  REDIS_ENABLED: process.env.REDIS_ENABLED !== 'false',
 };
 
 module.exports = { env };

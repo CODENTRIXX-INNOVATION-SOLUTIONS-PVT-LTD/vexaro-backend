@@ -1,7 +1,7 @@
 'use strict';
 
 const { UserRole } = require('../../../constants');
-const { getPaginationParams } = require('../../../utils/pagination');
+const { paginate } = require('../../../utils/pagination');
 const financeRepository = require('../finance.repository');
 const userRepository = require('../../users/user.repository');
 
@@ -16,7 +16,7 @@ const listTransactionsService = async (query, caller) => {
     userId = query.userId;
   }
 
-  const { limit, skip } = getPaginationParams(query, 20);
+  const { limit, skip } = paginate(query);
 
   const filter = { userId };
   if (query.type) filter.type = query.type;

@@ -33,9 +33,8 @@ const findOne = (filter) => Dispute.findOne(filter);
 const findPaginated = async (filter, { skip, limit, sort = { createdAt: -1 } } = {}) => {
   return Promise.all([
     Dispute.find(filter)
-      .populate('shipmentId', 'awb status')
-      .populate('raisedBy',   'firstName lastName email role')
-      .populate('assignedTo', 'firstName lastName email')
+      .select('shipmentId status createdAt')
+      .populate('shipmentId', 'awb')
       .sort(sort)
       .skip(skip)
       .limit(limit)
@@ -62,9 +61,10 @@ const findWeightById = (id) => WeightDispute.findById(id);
 const findWeightPaginated = async (filter, { skip, limit, sort = { createdAt: -1 } } = {}) => {
   return Promise.all([
     WeightDispute.find(filter)
+      .select('shipmentId status extraCharge disputeExpiresAt createdAt')
       .populate({
         path:   'shipmentId',
-        select: 'awb status origin destination merchantId distributorId',
+        select: 'awb',
       })
       .sort(sort)
       .skip(skip)
