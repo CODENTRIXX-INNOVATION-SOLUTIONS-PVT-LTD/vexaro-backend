@@ -3,7 +3,7 @@ const { authMiddleware, requireRole } = require('../../middleware/auth.middlewar
 const { success } = require('../../utils');
 const { wrapController } = require('../../utils/errors');
 const { UserRole } = require('../../constants');
-const { rateLimiter } = require('../../middleware/rate-limit.middleware');
+const { addressBookWriteLimiter } = require('../../middleware/rate-limit.middleware');
 const {
   inviteUser,
   listUsers,
@@ -43,13 +43,8 @@ const router = Router();
 // All user management routes require a valid JWT.
 router.use(authMiddleware);
 
-// Rate limiter specific to address book write operations (create/update/delete)
-// 60 requests per minute per IP to prevent abuse while allowing normal merchant usage
-const addressBookWriteLimiter = rateLimiter({
-  windowMs: 60 * 1000,
-  max: 60,
-  message: 'Too many address book requests. Please slow down.',
-});
+// Rate limiter specific to address book write operations (create/update/delete) is now imported directly.
+
 
 // ─── Address Book Routes ──────────────────────────────────────────────────────
 // IMPORTANT: These static sub-routes MUST be registered BEFORE /:id to avoid

@@ -13,6 +13,7 @@ const {
   authLimiter,
   bookingLimiter,
   webhookLimiter,
+  trackingLimiter,
 } = require('./middleware/rate-limit.middleware');
 
 const authRoutes = require('./modules/auth/auth.routes');
