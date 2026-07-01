@@ -165,21 +165,19 @@ const inviteUserService = async (dto, caller) => {
       }, session);
 
       const createdWarehouse = createdWarehouseArr[0];
-      setImmediate(async () => {
-        try {
-          const velocityWHId = await velocityClient.createWarehouse(
-            createdWarehouse,
-            `${dto.firstName} ${dto.lastName}`,
-          );
-          await warehouseRepository.findByIdAndUpdate(createdWarehouse._id, {
-            velocityWarehouseId: velocityWHId,
-            velocitySyncedAt:    new Date(),
-          });
-          console.log(`[Velocity] Warehouse synced for merchant ${dto.email}: ${velocityWHId}`);
-        } catch (syncErr) {
-          console.error(`[Velocity] Warehouse sync failed for merchant ${dto.email}:`, syncErr.message);
-        }
-      });
+      try {
+        const velocityWHId = await velocityClient.createWarehouse(
+          createdWarehouse,
+          `${dto.firstName} ${dto.lastName}`,
+        );
+        createdWarehouse.velocityWarehouseId = velocityWHId;
+        createdWarehouse.velocitySyncedAt    = new Date();
+        await createdWarehouse.save({ session });
+        console.log(`[Velocity] Warehouse synced for merchant ${dto.email}: ${velocityWHId}`);
+      } catch (syncErr) {
+        console.error(`[Velocity] Warehouse sync failed for merchant ${dto.email}:`, syncErr.message);
+        throw Object.assign(new Error(`Failed to register warehouse with shipping partner: ${syncErr.message}`), { statusCode: 502 });
+      }
     }
   });
 

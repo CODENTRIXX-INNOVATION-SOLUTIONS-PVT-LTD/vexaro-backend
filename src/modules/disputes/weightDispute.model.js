@@ -28,7 +28,7 @@ const weightDisputeSchema = new mongoose.Schema(
     }],
     status: {
       type: String,
-      enum: [DisputeStatus.OPEN, DisputeStatus.RESOLVED, DisputeStatus.CLOSED],
+      enum: Object.values(DisputeStatus),
       default: DisputeStatus.OPEN,
       index: true,
     },

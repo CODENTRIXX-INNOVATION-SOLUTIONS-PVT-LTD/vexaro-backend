@@ -17,6 +17,11 @@ const walletSchema = new mongoose.Schema(
       default: 0,
       min: [0, 'Balance cannot be negative'],
     },
+    codEscrowBalance: {
+      type: Number,
+      default: 0,
+      min: [0, 'Escrow balance cannot be negative'],
+    },
     currency: {
       type: String,
       default: 'INR',

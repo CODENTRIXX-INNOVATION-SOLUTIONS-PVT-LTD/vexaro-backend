@@ -130,6 +130,13 @@ const updateStatusService = async (shipmentId, dto, caller) => {
           status: CODStatus.PENDING,
           collectedAt: new Date(),
         }], { session });
+
+        const { Wallet } = require('../../finance/finance.model');
+        await Wallet.findOneAndUpdate(
+          { userId: shipment.merchantId, isActive: true },
+          { $inc: { codEscrowBalance: shipment.codAmount } },
+          { session }
+        );
       } else {
         shipment.codStatus = 'REMITTED';
         shipment.payoutStatus = 'PAID';

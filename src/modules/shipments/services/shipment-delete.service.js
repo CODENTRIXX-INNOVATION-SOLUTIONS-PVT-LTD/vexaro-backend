@@ -54,20 +54,21 @@ const deleteShipmentService = async (shipmentId, caller) => {
     throw Object.assign(new Error('Cancellation is only allowed when status is ORDER_CREATED.'), { statusCode: 400 });
   }
 
-  // 1. Database mutations and refunds in a committed transaction
-  const result = await runInTransaction(async (session) => {
-    await performCancellation(shipment, caller, session);
-    return { message: 'Shipment cancelled successfully.' };
-  });
-
-  // 2. Velocity API call outside the database transaction
+  // 1. Velocity API call first
   if (shipment.velocityBooked && shipment.carrierAWB) {
     try {
       await velocityClient.cancelOrders([shipment.carrierAWB]);
     } catch (velErr) {
       console.error(`[Velocity] Cancel failed for AWB ${shipment.carrierAWB}:`, velErr.message);
+      throw Object.assign(new Error(`Failed to cancel booking with shipping partner: ${velErr.message}`), { statusCode: 502 });
     }
   }
+
+  // 2. Database mutations and refunds in a committed transaction
+  const result = await runInTransaction(async (session) => {
+    await performCancellation(shipment, caller, session);
+    return { message: 'Shipment cancelled successfully.' };
+  });
 
   // 3. Notifications & Audits
   try {

@@ -56,6 +56,10 @@ const resolveAddressFromBook = async (addressBookId, merchantId) => {
 
 
 const createShipmentService = async (dto, caller) => {
+  if (velocityClient.tokenBlocked) {
+    throw Object.assign(new Error('Booking is temporarily disabled due to authorization issues with our shipping partner.'), { statusCode: 503 });
+  }
+
   let merchantId;
   if (caller.role === UserRole.MERCHANT) {
     merchantId = caller.userId;
@@ -202,6 +206,8 @@ const createShipmentService = async (dto, caller) => {
         merchantCost:     pricing.merchantCost,
         vexaroProfit:     pricing.vexaroProfit,
         distributorProfit: pricing.distributorProfit,
+        isFragile:        dto.isFragile        ?? false,
+        itemType:         dto.itemType         ?? 'Parcel',
         declaredValue:    dto.declaredValue    ?? 0,
         isCOD:            dto.isCOD            ?? false,
         codAmount:        dto.codAmount        ?? 0,

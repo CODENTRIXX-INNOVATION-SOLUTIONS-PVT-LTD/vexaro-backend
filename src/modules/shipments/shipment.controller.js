@@ -225,7 +225,7 @@ const getBulkUploadStatus = withErrorHandling(async (req, res) => {
 // ─── POST /api/shipments/serviceability ──────────────────────────────────────
 const checkServiceability = withErrorHandling(async (req, res) => {
   const dto = req.validated.body;
-  const result = await checkServiceabilityService(dto);
+  const result = await checkServiceabilityService(dto, req.user);
   success(res, 'Serviceability checked successfully', result);
 });
 

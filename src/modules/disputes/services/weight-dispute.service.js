@@ -100,6 +100,7 @@ const submitDisputeProofService = async (id, dto, caller) => {
   }
 
   dispute.proofImages = dto.proofImages || [];
+  dispute.status = 'UNDER_REVIEW';
   await disputeRepository.saveWeight(dispute);
 
   return dispute;

@@ -35,15 +35,15 @@ const updateDisputeService = async (id, dto, caller) => {
 };
 
 const resolveWeightDisputeService = async (id, dto, caller) => {
-  if (![UserRole.SUPER_ADMIN, UserRole.DISTRIBUTOR].includes(caller.role)) {
-    throw Object.assign(new Error('Access denied. Only admins or distributors can resolve disputes.'), { statusCode: 403 });
+  if (caller.role !== UserRole.SUPER_ADMIN) {
+    throw Object.assign(new Error('Access denied. Only Super Admin has final authority to resolve disputes.'), { statusCode: 403 });
   }
 
   const dispute = await disputeRepository.findWeightById(id);
   if (!dispute) {
     throw Object.assign(new Error('Weight dispute not found'), { statusCode: 404 });
   }
-  if (dispute.status !== 'OPEN') {
+  if (dispute.status !== 'OPEN' && dispute.status !== 'UNDER_REVIEW') {
     throw Object.assign(new Error(`Weight dispute is already resolved or closed: status is ${dispute.status}`), { statusCode: 400 });
   }
 
@@ -52,12 +52,8 @@ const resolveWeightDisputeService = async (id, dto, caller) => {
     throw Object.assign(new Error('Shipment associated with dispute not found'), { statusCode: 404 });
   }
 
-  if (caller.role === UserRole.DISTRIBUTOR && shipment.distributorId?.toString() !== caller.userId) {
-    throw Object.assign(new Error('Access denied. This shipment does not belong to your distributor account.'), { statusCode: 403 });
-  }
-
   return runInTransaction(async (session) => {
-    const isApproved = dto.status === 'RESOLVED';
+    const isApproved = dto.status === 'APPROVED';
 
     if (isApproved) {
       const ref = `REVS-${shipment.awb}`;
@@ -80,9 +76,9 @@ const resolveWeightDisputeService = async (id, dto, caller) => {
         });
       }
 
-      dispute.status = 'RESOLVED';
+      dispute.status = 'APPROVED';
     } else {
-      dispute.status = 'CLOSED';
+      dispute.status = 'REJECTED';
     }
 
     await disputeRepository.saveWeight(dispute, { session });
@@ -90,7 +86,7 @@ const resolveWeightDisputeService = async (id, dto, caller) => {
     try {
       const resultLabel = isApproved ? 'APPROVED (charges reversed)' : 'REJECTED (charges upheld)';
       await createNotification(shipment.merchantId, {
-        title: `Weight Dispute ${isApproved ? 'Approved' : 'Closed'}`,
+        title: `Weight Dispute ${isApproved ? 'Approved' : 'Rejected'}`,
         message: `Your weight dispute for AWB ${shipment.awb} has been ${resultLabel}.`,
         type: 'DISPUTE',
       });

@@ -52,6 +52,9 @@ const bootstrap = async () => {
   const { connect: connectRedis } = require('./utils/cache');
   await connectRedis();
 
+  const { initScheduler } = require('./utils/scheduler');
+  initScheduler();
+
   const server = app.listen(env.PORT, () => {
     logger.info('server_started', {
       port:        env.PORT,

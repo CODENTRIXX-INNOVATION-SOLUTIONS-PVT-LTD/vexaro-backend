@@ -6,6 +6,7 @@ const { ShipmentStatus, ShipmentServiceType } = require('../../constants');
 const addressSchema = z.object({
   name:        z.string().min(1, 'Name is required').trim(),
   phone:       z.string().min(7, 'Phone is required').trim(),
+  email:       z.string().email('Invalid email format').trim().optional().or(z.literal('')),
   addressLine: z.string().min(1, 'Address line is required').trim(),
   city:        z.string().min(1, 'City is required').trim(),
   state:       z.string().min(1, 'State is required').trim(),
@@ -27,6 +28,8 @@ const createShipmentSchema = z.object({
   length:       z.number().positive().optional(),
   breadth:      z.number().positive().optional(),
   height:       z.number().positive().optional(),
+  isFragile:    z.boolean().optional(),
+  itemType:     z.string().trim().optional(),
 
   declaredValue: z.number().min(0).optional(),
   isCOD:         z.boolean().optional(),
@@ -109,6 +112,11 @@ const serviceabilitySchema = z.object({
     .regex(/^\d{6}$/, 'toPincode must contain only digits'),
   isCOD:     z.boolean().optional().default(false),
   isForward: z.boolean().optional().default(true),
+  weight:    z.number().positive().optional(),
+  length:    z.number().positive().optional(),
+  breadth:   z.number().positive().optional(),
+  height:    z.number().positive().optional(),
+  codAmount: z.number().nonnegative().optional(),
 });
 
 // ─── Velocity rates ────────────────────────────────────────────────────────────

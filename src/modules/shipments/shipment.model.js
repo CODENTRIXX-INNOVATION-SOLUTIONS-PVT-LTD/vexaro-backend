@@ -18,6 +18,7 @@ const addressSchema = new mongoose.Schema(
   {
     name:       { type: String, required: true, trim: true },
     phone:      { type: String, required: true, trim: true },
+    email:      { type: String, default: null, trim: true },
     addressLine:{ type: String, required: true, trim: true },
     city:       { type: String, required: true, trim: true },
     state:      { type: String, required: true, trim: true },
@@ -87,6 +88,8 @@ const shipmentSchema = new mongoose.Schema(
     length:           { type: Number, default: null },             // cm
     breadth:          { type: Number, default: null },
     height:           { type: Number, default: null },
+    itemType:         { type: String, default: 'Parcel', trim: true },
+    isFragile:        { type: Boolean, default: false },
     declaredValue:    { type: Number, default: 0, min: 0 },        // ₹
     isCOD:            { type: Boolean, default: false },
     codAmount:        { type: Number, default: 0, min: 0 },

@@ -9,9 +9,13 @@ const ShipmentStatus = Object.freeze({
   ORDER_CREATED:    'ORDER_CREATED',
   PICKED_UP:        'PICKED_UP',
   ARRIVED_AT_HUB:   'ARRIVED_AT_HUB',
+  IN_TRANSIT:       'IN_TRANSIT',
   OUT_FOR_DELIVERY: 'OUT_FOR_DELIVERY',
   DELIVERED:        'DELIVERED',
   DELIVERY_FAILED:  'DELIVERY_FAILED',
+  RTO_INITIATED:    'RTO_INITIATED',
+  RTO_IN_TRANSIT:   'RTO_IN_TRANSIT',
+  RTO_DELIVERED:    'RTO_DELIVERED',
   RTO:              'RTO',
   CANCELLED:        'CANCELLED',
 });
@@ -35,6 +39,7 @@ const ShipmentPayoutStatus = Object.freeze({
 
 const CODStatus = Object.freeze({
   PENDING:   'PENDING',
+  SETTLED_TO_VEXARO: 'SETTLED_TO_VEXARO',
   REMITTED:  'REMITTED',
   DISPUTED:  'DISPUTED',
 });
@@ -62,9 +67,10 @@ const PaymentStatus = Object.freeze({
 
 const DisputeStatus = Object.freeze({
   OPEN: 'OPEN',
-  IN_REVIEW: 'IN_REVIEW',
-  RESOLVED: 'RESOLVED',
-  CLOSED: 'CLOSED',
+  UNDER_REVIEW: 'UNDER_REVIEW',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  EXPIRED: 'EXPIRED',
 });
 
 const DisputeCategory = Object.freeze({

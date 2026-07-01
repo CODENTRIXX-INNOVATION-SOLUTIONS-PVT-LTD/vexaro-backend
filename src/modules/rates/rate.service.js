@@ -3,7 +3,7 @@
 const rateRepository = require('./rate.repository');
 const userRepository = require('../users/user.repository');
 const { delPattern, del, KEYS } = require('../../utils/cache');
-const { UserRole } = require('../../constants');
+const { UserRole, SystemConfig } = require('../../constants');
 
 /**
  * Rate Service
@@ -79,16 +79,29 @@ const calculateRateService = async (dto, user) => {
   const codCharge     = isCOD ? (card.codCharge + ((codAmount || 0) * card.codPercent / 100)) : 0;
   const totalCharge   = baseCharge + fuelCharge + codCharge;
 
-  // Apply distributor margin if the caller is a merchant with a distributor
+  // Retrieve Super Admin markup percentage
+  const saMarkup = card.superAdminMarkupPercent ?? SystemConfig.DEFAULT_SUPER_ADMIN_MARKUP;
+
   let finalCharge = totalCharge;
   if (user.role === UserRole.MERCHANT) {
     const merchant = await userRepository.findById(user.userId);
     if (merchant?.invitedBy) {
+      // Vexaro charges the distributor marked-up price first
+      const distributorCost = totalCharge * (1 + saMarkup / 100);
       const margin = await rateRepository.findOneMargin({ distributorId: merchant.invitedBy, rateCardId: card._id, isActive: true });
       if (margin) {
-        finalCharge += (totalCharge * margin.marginPercent / 100) + (margin.flatMargin || 0);
+        // Distributor's margin is calculated on top of Vexaro's price (distributorCost)
+        finalCharge = distributorCost * (1 + (margin.marginPercent || 0) / 100) + (margin.flatMargin || 0);
+      } else {
+        finalCharge = distributorCost;
       }
+    } else {
+      // Direct merchant -> Vexaro sells directly at marked-up rate
+      finalCharge = totalCharge * (1 + saMarkup / 100);
     }
+  } else if (user.role === UserRole.DISTRIBUTOR) {
+    // Distributor gets Vexaro price (with Super Admin markup)
+    finalCharge = totalCharge * (1 + saMarkup / 100);
   }
 
   return {

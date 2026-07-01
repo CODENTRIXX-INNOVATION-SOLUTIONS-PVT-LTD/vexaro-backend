@@ -30,49 +30,64 @@ const remitCODService = async (codId, dto, caller) => {
 
   const cod = await financeRepository.findCodById(codId);
   if (!cod) throw Object.assign(new Error('COD record not found'), { statusCode: 404 });
-  if (cod.status !== CODStatus.PENDING) {
-    throw Object.assign(new Error(`COD is already ${cod.status}`), { statusCode: 400 });
-  }
-  if (caller.role === UserRole.DISTRIBUTOR && cod.distributorId?.toString() !== caller.userId) {
-    throw Object.assign(new Error('Access denied'), { statusCode: 403 });
-  }
 
-  return runInTransaction(async (session) => {
-    await applyTransaction(session, cod.merchantId.toString(), TransactionType.COD_CREDIT, cod.codAmount, {
-      shipmentId:  cod.shipmentId,
-      performedBy: caller.userId,
-      reference:   `COD-${cod._id}`,
-      note:        dto.note || 'COD amount credited',
-    });
-
-    cod.status     = CODStatus.REMITTED;
-    cod.remittedAt = new Date();
-    cod.remittedBy = caller.userId;
-    cod.note       = dto.note || null;
-    await financeRepository.saveCod(cod, { session });
-
-    await shipmentRepository.findByIdAndUpdate(
-      cod.shipmentId,
-      {
-        codStatus: 'REMITTED',
-        payoutStatus: 'PAID',
-        payoutDate: new Date(),
-      },
-      { session }
-    );
-
-    try {
-      await createNotification(cod.merchantId.toString(), {
-        title: 'COD Released',
-        message: `COD amount of ₹${cod.codAmount.toFixed(2)} has been released to your wallet.`,
-        type: 'PAYMENT',
-      });
-    } catch (notifErr) {
-      console.error('Failed to notify COD release:', notifErr);
+  if (caller.role === UserRole.SUPER_ADMIN) {
+    if (cod.status !== CODStatus.PENDING) {
+      throw Object.assign(new Error(`Super Admin can only settle PENDING CODs. Current status: ${cod.status}`), { statusCode: 400 });
     }
 
-    return cod;
-  });
+    return runInTransaction(async (session) => {
+      cod.status = CODStatus.SETTLED_TO_VEXARO;
+      await financeRepository.saveCod(cod, { session });
+      return cod;
+    });
+  }
+
+  if (caller.role === UserRole.DISTRIBUTOR) {
+    if (cod.status !== CODStatus.SETTLED_TO_VEXARO) {
+      throw Object.assign(new Error(`Distributors can only remit CODs settled to Vexaro. Current status: ${cod.status}`), { statusCode: 400 });
+    }
+    if (cod.distributorId?.toString() !== caller.userId) {
+      throw Object.assign(new Error('Access denied. This COD shipment is not assigned to your distributor account.'), { statusCode: 403 });
+    }
+
+    return runInTransaction(async (session) => {
+      await applyTransaction(session, cod.merchantId.toString(), TransactionType.COD_CREDIT, cod.codAmount, {
+        shipmentId:  cod.shipmentId,
+        performedBy: caller.userId,
+        reference:   `COD-${cod._id}`,
+        note:        dto.note || 'COD amount credited',
+      });
+
+      cod.status     = CODStatus.REMITTED;
+      cod.remittedAt = new Date();
+      cod.remittedBy = caller.userId;
+      cod.note       = dto.note || null;
+      await financeRepository.saveCod(cod, { session });
+
+      await shipmentRepository.findByIdAndUpdate(
+        cod.shipmentId,
+        {
+          codStatus: 'REMITTED',
+          payoutStatus: 'PAID',
+          payoutDate: new Date(),
+        },
+        { session }
+      );
+
+      try {
+        await createNotification(cod.merchantId.toString(), {
+          title: 'COD Released',
+          message: `COD amount of ₹${cod.codAmount.toFixed(2)} has been released to your wallet.`,
+          type: 'PAYMENT',
+        });
+      } catch (notifErr) {
+        console.error('Failed to notify COD release:', notifErr);
+      }
+
+      return cod;
+    });
+  }
 };
 
 module.exports = {

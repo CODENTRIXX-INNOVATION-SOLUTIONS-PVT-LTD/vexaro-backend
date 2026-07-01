@@ -33,7 +33,22 @@ const applyTransaction = async (session, userId, type, amount, meta = {}) => {
 
   const balanceBefore = wallet.balance;
 
-  if (isDebit) {
+  if (type === TransactionType.COD_CREDIT) {
+    if ((wallet.codEscrowBalance || 0) < amount) {
+      throw Object.assign(new Error(`Insufficient escrow balance to remit COD. Available: ₹${(wallet.codEscrowBalance || 0).toFixed(2)}`), { statusCode: 400 });
+    }
+    const Wallet = wallet.constructor;
+    const updatedWallet = await Wallet.findOneAndUpdate(
+      { _id: wallet._id, isActive: true, codEscrowBalance: { $gte: amount } },
+      { $inc: { codEscrowBalance: -amount, balance: amount } },
+      { new: true, session }
+    );
+    if (!updatedWallet) {
+      throw Object.assign(new Error('Failed to update wallet balances for COD release'), { statusCode: 500 });
+    }
+    wallet.balance = updatedWallet.balance;
+    wallet.codEscrowBalance = updatedWallet.codEscrowBalance;
+  } else if (isDebit) {
     await debitWallet(session, wallet, amount);
   } else {
     await creditWallet(session, wallet, amount);
